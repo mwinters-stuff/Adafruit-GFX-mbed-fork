@@ -9,9 +9,9 @@
 #include <SwitchInput.h>
 #include "mbed.h"
 //#include "Adafruit_SSD1306_I2c.h"
-#include "Adafruit_SSD1306_Spi.h"
+#include "oled/AdafruitSSD1306I2c.h"
 #include <IoLogging.h>
-#include <Fonts/FreeSans9pt7b.h>
+#include <Fonts/OpenSansRegular7pt.h>
 
 // Host PC Communication channels
 #ifdef BUILD_FOR_MBED_6
@@ -21,11 +21,9 @@ Serial pc(USBTX, USBRX);
 #endif
 MBedLogger LoggingPort(pc);
 
-//I2C i2c(PF_0,PF_1);
-//Adafruit_SSD1306_I2c gfx(i2c, NC, SSD_I2C_ADDRESS, 64, 132, SH_1106);
-
-SPI spi(PB_5, PB_4, PB_3);
-Adafruit_SSD1306_Spi gfx(spi, PD_15, PF_12, PF_13, 64, 128, SSD_1306);
+I2C i2c(PF_0,PF_1);
+#define SSD_I2C_ADDRESS 0x78
+AdafruitSSD1306I2c gfx(&i2c, NC, SSD_I2C_ADDRESS, 64, 132, ENCMODE_UTF8, SH_1106);
 
 bool exitApp = false;
 
@@ -49,7 +47,7 @@ int main()
     switches.addSwitch(PE_4, [] (pinid_t id, bool held) {
         serdebugF3("Switch Pressed", (int)id, (int) held);
     });
-    switches.addSwitch(USER_BUTTON, [] (pinid_t id, bool held) {
+    switches.addSwitch(PD_9, [] (pinid_t id, bool held) {
         serdebugF3("User Pressed", (int)id, (int) held);
     }, NO_REPEAT, true);
 
@@ -63,7 +61,7 @@ int main()
     gfx.clearDisplay();
 
     taskManager.scheduleFixedRate(75, [] {
-        gfx.setFont(nullptr);
+        gfx.setFont(OpenSansRegular7pt);
         gfx.setCursor(0, 0);
         gfx.setTextSize(2);
         gfx.print("mbed demo");

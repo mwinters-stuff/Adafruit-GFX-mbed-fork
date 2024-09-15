@@ -7,41 +7,44 @@
 #include <PlatformDetermination.h>
 #include <TaskManager.h>
 //#include "Adafruit_SSD1306_I2c.h" (for i2c displays)
-#include "Adafruit_SSD1306_Spi.h"
-#include <Fonts/FreeSans9pt7b.h>
+#include "oled/AdafruitSSD1306Spi.h"
+#include <Fonts/OpenSansRegular7pt.h>
 
 bool running = true;
 
+// For I2C instead of SPI
+//#include "oled/AdafruitSSD1306I2c.h"
 //I2C i2c(PF_0,PF_1);
-//Adafruit_SSD1306_I2c gfx(i2c, NC, SSD_I2C_ADDRESS, 64, 132, SH_1106);
+//#define SSD_I2C_ADDRESS ..
+//AdafruitSSD1306I2c gfx(i2c, NC, SSD_I2C_ADDRESS, 64, 132, SH_1106);
 
 SPI spi(PB_5, PB_4, PB_3);
-Adafruit_SSD1306_Spi gfx(spi, PD_15, PF_12, PF_13, 64, 128, SSD_1306);
+AdafruitSSD1306Spi* gfx;
 
 int main()
 {
-    //i2c.frequency(400000);
+    gfx = new AdafruitSSD1306Spi(SPIWithSettings(&spi, PF_13, 10000000), PD_15, PF_12, 64, 128, ENCMODE_UTF8, SSD_1306);
 
-    gfx.begin();
+    gfx->begin();
 
-    gfx.clearDisplay();
-    gfx.setFont(&FreeSans9pt7b);
-    gfx.setCursor(0, 16);
-    gfx.setTextColor(WHITE);
-    gfx.print("Hello mbed");
+    gfx->clearDisplay();
+    gfx->setFont(OpenSansRegular7pt);
+    gfx->setCursor(0, 16);
+    gfx->setTextColor(WHITE);
+    gfx->print("Hello mbed");
 
 
     // actually cause the write to take place.
-    gfx.display();
+    gfx->display();
 
     taskManager.scheduleFixedRate(1, [] {
-        gfx.fillRect(0, 20, gfx.width(), 20, BLACK);
-        gfx.setFont(nullptr);
-        gfx.setCursor(0, 20);
-        gfx.print(millis());
+        gfx->fillRect(0, 20, gfx->width(), 20, BLACK);
+        gfx->setFont(OpenSansRegular7pt);
+        gfx->setCursor(0, 20);
+        gfx->print(millis());
 
         // actually cause the write to take place.
-        gfx.display();
+        gfx->display();
     }, TIME_SECONDS);
 
     while(running) {

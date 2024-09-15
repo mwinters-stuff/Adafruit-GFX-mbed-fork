@@ -17,14 +17,16 @@ All text above must be included in any redistribution
  *  Modified by Neal Horman 7/14/2012 for use in mbed
  */
 
-#ifndef _ADAFRUIT_GFX_H_
-#define _ADAFRUIT_GFX_H_
+#ifndef ADAFRUIT_GFX_H
+#define ADAFRUIT_GFX_H
 
-#include <string.h>
 #include "Adafruit_GFX_Config.h"
-#include "gfxfont.h"
+#include "tcUnicodeHelper.h"
+#include <PrintCompat.h>
 
+#ifndef pgm_read_byte
 #define pgm_read_byte(x) (*x)
+#endif //pgm_read_byte
 
 static inline void swap(int16_t &a, int16_t &b) {
     int16_t t = a;
@@ -40,31 +42,14 @@ static inline void swap(int16_t &a, int16_t &b) {
 #define BLACK 0
 #define WHITE 1
 
-
 /// A generic graphics superclass that can handle all sorts of drawing. At a
 /// minimum you can subclass and provide drawPixel(). At a maximum you can do a
 /// ton of overriding to optimize. Used for any/all Adafruit displays!
 
-#ifdef USE_IOABSTRACTION_TCMENU
-
-#include <PrintCompat.h>
-
 class Adafruit_GFX : public Print {
-#else
-class Adafruit_GFX
-{
-    public:
-        /**
-         * Without IoAbstraction at least give the most basic print function, stream has gone and FileHandle just
-         * does not look right in code for this type of stuff.
-         */
-        void print(const char* sz) {
-            auto len = strlen(sz);
-            for(int i=0;i<len;i++) write(sz[i]);
-        }
-#endif
 public:
-    Adafruit_GFX(int16_t w, int16_t h); // Constructor
+    Adafruit_GFX(int16_t w, int16_t h, UnicodeEncodingMode encodingMode); // Constructor
+    Adafruit_GFX(int16_t w, int16_t h, UnicodeFontHandler* fontHandler); // Constructor
 
     /**********************************************************************/
     /*!
@@ -77,10 +62,12 @@ public:
     /**********************************************************************/
     virtual void drawPixel(int16_t x, int16_t y, uint16_t color) = 0;
 
+    void setTextSize(int sz, int sz1=0) {}
+
     // TRANSACTION API / CORE DRAW API
     // These MAY be overridden by the subclass to provide device-specific
     // optimized code.  Otherwise 'generic' versions are used.
-    virtual void startWrite(void);
+    virtual void startWrite();
 
     virtual void writePixel(int16_t x, int16_t y, uint16_t color);
 
@@ -94,7 +81,7 @@ public:
     virtual void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
                            uint16_t color);
 
-    virtual void endWrite(void);
+    virtual void endWrite();
 
     // CONTROL API
     // These MAY be overridden by the subclass to provide device-specific
@@ -186,20 +173,28 @@ public:
     void drawRGBBitmap(int16_t x, int16_t y, uint16_t *bitmap, uint8_t *mask,
                        int16_t w, int16_t h);
 
-    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color,
-                  uint16_t bg, uint8_t size);
+    UnicodeFontHandler* getFontHandler() { return fontHandler; }
 
-    void drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color,
-                  uint16_t bg, uint8_t size_x, uint8_t size_y);
+    void getTextBounds(const char *str, int16_t x, int16_t y, int16_t *x1,
+                       int16_t *y1, uint16_t *w, uint16_t *h) {
+        int baseline;
+        Coord coord = fontHandler->textExtents(str, &baseline, false);
+        *x1 = x;
+        *y1 = y;
+        *w = coord.x;
+        *h = coord.y;
+    }
 
-    void getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1,
-                       int16_t *y1, uint16_t *w, uint16_t *h);
+    Coord getTextExtents(const char* data, int* baseline = nullptr) {
+        return fontHandler->textExtents(data, baseline, false);
+    }
 
-    void setTextSize(uint8_t s);
-
-    void setTextSize(uint8_t sx, uint8_t sy);
-
-    void setFont(const GFXfont *f = nullptr);
+    void setFont(const GFXfont *f = nullptr) {
+        fontHandler->setFont(f);
+    }
+    void setFont(const UnicodeFont *f) {
+        fontHandler->setFont(f);
+    }
 
     /**********************************************************************/
     /*!
@@ -209,8 +204,8 @@ public:
     */
     /**********************************************************************/
     void setCursor(int16_t x, int16_t y) {
-        cursor_x = x;
-        cursor_y = y;
+        cursorX = x;
+        cursorY = y;
     }
 
     /**********************************************************************/
@@ -221,28 +216,13 @@ public:
                are set to same color rather than using a separate flag.
     */
     /**********************************************************************/
-    void setTextColor(uint16_t c) { textcolor = textbgcolor = c; }
-
-    /**********************************************************************/
-    /*!
-      @brief   Set text font color with custom background color
-      @param   c   16-bit 5-6-5 Color to draw text with
-      @param   bg  16-bit 5-6-5 Color to draw background/fill with
-    */
-    /**********************************************************************/
-    void setTextColor(uint16_t c, uint16_t bg) {
-        textcolor = c;
-        textbgcolor = bg;
+    void setTextColor(uint32_t c) {
+        fontHandler->setDrawColor(c);
     }
 
-    /**********************************************************************/
-    /*!
-    @brief  Set whether text that is too long for the screen width should
-            automatically wrap around to the next line (else clip right).
-    @param  w  true for wrapping, false for clipping
-    */
-    /**********************************************************************/
-    void setTextWrap(bool w) { wrap = w; }
+    void setTextColor(uint16_t c, uint16_t bg) {
+        fontHandler->setDrawColor(c);
+    }
 
     /**********************************************************************/
     /*!
@@ -258,7 +238,6 @@ public:
       @param  x  true = enable (new behavior), false = disable (old behavior)
     */
     /**********************************************************************/
-    void cp437(bool x = true) { _cp437 = x; }
 
     using Print::write;
 
@@ -270,7 +249,7 @@ public:
       @returns    Width in pixels
     */
     /************************************************************************/
-    int16_t width(void) const { return _width; };
+    int16_t width() const { return _width; };
 
     /************************************************************************/
     /*!
@@ -278,7 +257,7 @@ public:
       @returns    Height in pixels
     */
     /************************************************************************/
-    int16_t height(void) const { return _height; }
+    int16_t height() const { return _height; }
 
     /************************************************************************/
     /*!
@@ -286,60 +265,39 @@ public:
       @returns    0 thru 3 corresponding to 4 cardinal rotations
     */
     /************************************************************************/
-    uint8_t getRotation(void) const { return rotation; }
+    uint8_t getRotation() const { return rotation; }
 
-    // get current cursor position (get rotation safe maximum values,
-    // using: width() for x, height() for y)
-    /************************************************************************/
-    /*!
-      @brief  Get text cursor X location
-      @returns    X coordinate in pixels
-    */
-    /************************************************************************/
-    int16_t getCursorX(void) const { return cursor_x; }
-
-    /************************************************************************/
-    /*!
-      @brief      Get text cursor Y location
-      @returns    Y coordinate in pixels
-    */
-    /************************************************************************/
-    int16_t getCursorY(void) const { return cursor_y; };
+    int16_t getCursorX() const { return cursorX; }
+    int16_t getCursorY() const { return cursorY; }
 
 protected:
     void charBounds(unsigned char c, int16_t *x, int16_t *y, int16_t *minx,
                     int16_t *miny, int16_t *maxx, int16_t *maxy);
 
+    UnicodeFontHandler* fontHandler;
     int16_t WIDTH;        ///< This is the 'raw' display width - never changes
     int16_t HEIGHT;       ///< This is the 'raw' display height - never changes
     int16_t _width;       ///< Display width as modified by current rotation
     int16_t _height;      ///< Display height as modified by current rotation
-    int16_t cursor_x;     ///< x location to start print()ing text
-    int16_t cursor_y;     ///< y location to start print()ing text
-    uint16_t textcolor;   ///< 16-bit background color for print()
-    uint16_t textbgcolor; ///< 16-bit text color for print()
-    uint8_t textsize_x;   ///< Desired magnification in X-axis of text to print()
-    uint8_t textsize_y;   ///< Desired magnification in Y-axis of text to print()
     uint8_t rotation;     ///< Display rotation (0 thru 3)
-    bool wrap;            ///< If set, 'wrap' text at right edge of display
-    bool _cp437;          ///< If set, use correct CP437 charset (default is off)
-    GFXfont *gfxFont;     ///< Pointer to special font
+    int16_t cursorX=0;
+    int16_t cursorY=0;
 };
 
 /// A GFX 1-bit canvas context for graphics
 class GFXcanvas1 : public Adafruit_GFX {
 public:
-    GFXcanvas1(uint16_t w, uint16_t h);
+    GFXcanvas1(uint16_t w, uint16_t h, UnicodeFontHandler* fh);
 
     ~GFXcanvas1(void);
 
-    void drawPixel(int16_t x, int16_t y, uint16_t color);
+    void drawPixel(int16_t x, int16_t y, uint16_t color) override;
 
-    void fillScreen(uint16_t color);
+    void fillScreen(uint16_t color) override;
 
-    void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+    void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) override;
 
-    void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+    void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) override;
 
     bool getPixel(int16_t x, int16_t y) const;
     /**********************************************************************/
@@ -348,7 +306,7 @@ public:
       @returns  A pointer to the allocated buffer
     */
     /**********************************************************************/
-    uint8_t *getBuffer(void) const { return buffer; }
+    uint8_t *getBuffer() const { return buffer; }
 
 protected:
     bool getRawPixel(int16_t x, int16_t y) const;
@@ -361,4 +319,5 @@ private:
     uint8_t *buffer;
 };
 
-#endif
+#endif // ADAFRUIT_GFX_H
+

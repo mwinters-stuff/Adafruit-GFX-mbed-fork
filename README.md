@@ -20,15 +20,38 @@ Although many newer mbed RTOS chipsets have inbuilt hardware LCD drivers, there'
 * You can use the regular [Adafruit_GFX introductory guide](https://learn.adafruit.com/adafruit-gfx-graphics-library/overview) as this fork has high compatibility. 
 * It also integrates well with tcMenu, IoAbstraction and TaskManagerIO.
 
+## Different construction between version
+
+If you prefer to stay temporarily with the old version here is the link, we do recommend you move forward, and the work to do so should be trivial for most, but here is the old link: https://github.com/TcMenu/Adafruit-GFX-mbed-fork/releases/tag/mb0.1.1
+
+## Constructing and using a display object
+
+For SPI, we recommend that you create the object using `new` once the system is initialised, sometimes trying to use SPI in any way before this results in board crashes. This is as simple as deferring the creation.
+    
+    // Global variable
+    AdafruitSSD1306Spi* gfx;
+
+    // then somewhere during setup
+    gfx = new AdafruitSSD1306Spi(SPIWithSettings(&spi, PF_13, 10000000), PD_15, PF_12, 64, 128, ENCMODE_UTF8, SSD_1306);
+    gfx->begin();
+
+For I2C you can use either the above method or just use a global variable providing it an I2C pointer and the address of the device:
+
+    AdafruitSSD1306I2c gfx(&i2c, NC, SSD_I2C_ADDRESS, 64, 132, ENCMODE_UTF8, SH_1106);
+
+The above assume you want to use UTF-8 encoding.
+
+Once created usage is almost exactly the same as regular Adafruit_GFX with tcUnicode also available (even down to the print interface).
+
 ## Issues
 
-Unless you are absolutely sure that the issue is a core Adafruit_GFX issue, please raise the issue here first for us to triage it.
+Never raise issues in the core Adafruit_GFX repository as this fork is now very different, please raise the issue here first for us to triage it.
 
 ## Usage
 
-This library can work with SSD1306 and SH1106 displays over I2C or SPI. There's a couple of really simple examples packaged that show basic usage. However, you can look at almost any Adafruit example, as this library is completely compatible, especially wit the IoAbstraction extensions.
+This library can work with SSD1306 and SH1106 displays over I2C or SPI. There's a couple of really simple examples packaged that show basic usage. However, you can look at almost any Adafruit example, as this library is completely compatible.
 
-Although not required, this library has the ability to integrate with IoAbstraction by defining USE_IOABSTRACTION_TCMENU, this provides a complete Print interface that is nearly compatible with Arduino's print functions. I'll be honest, we all but assume this flag is set because all our development uses it. To completely remove IoAbstraction, remove the flag in the config header. 
+This library integrates with IoAbstraction to provide a complete Print interface that is nearly compatible with Arduino's print functions. You also need `IoAbstraction` to use this library. 
 
 Performance, at the moment the SSD1306 class could be significantly optimised. However, our first aim is to get it stable on mbed 5/6, we'll look at performance later.
 
@@ -38,22 +61,8 @@ Every fork should state what it's purpose is. This fork is purely to provide mbe
 
 Important note about bug fixes: do not put in PRs for the core graphics class here, only mbed and display specific fixes will be applied. Instead apply any changes to the core and then we'll re-pull the change here.
 
-# Useful Resources
+# Bitmaps and fonts with the library
 
-- Image2Code: This is a handy Java GUI utility to convert a BMP file into the array code necessary to display the image with the drawBitmap function. Check out the code at ehubin's GitHub repository: https://github.com/ehubin/Adafruit-GFX-Library/tree/master/Img2Code
-
-- drawXBitmap function: You can use the GIMP photo editor to save a .xbm file and use the array saved in the file to draw a bitmap with the drawXBitmap function. See the pull request here for more details: https://github.com/adafruit/Adafruit-GFX-Library/pull/31
-
-- 'Fonts' folder contains bitmap fonts for use with recent (1.1 and later) Adafruit_GFX. To use a font in your Arduino sketch, \#include the corresponding .h file and pass address of GFXfont struct to setFont(). Pass NULL to revert to 'classic' fixed-space bitmap font.
-
-- 'fontconvert' folder contains a command-line tool for converting TTF fonts to Adafruit_GFX header format.
-
----
-
-### Roadmap
-
-The PRIME DIRECTIVE is to maintain backward compatibility with existing Arduino sketches -- many are hosted elsewhere and don't track changes here, some are in print and can never be changed! This "little" library has grown organically over time and sometimes we paint ourselves into a design corner and just have to live with it or add ungainly workarounds.
-
-Highly unlikely to merge any changes for additional or incompatible font formats (see Prime Directive above). There are already two formats and the code is quite bloaty there as it is (this also creates liabilities for tools and documentation). If you *must* have a more sophisticated font format, consider creating a fork with the features required for your project. For similar reasons, also unlikely to add any more bitmap formats, it's getting messy.
-
-Please don't reformat code for the sake of reformatting code. The resulting large "visual diff" makes it impossible to untangle actual bug fixes from merely rearranged lines.
+- With TcMenu Designer you can now export and even create bitmaps suitable for use with this library. You can use the GIMP photo editor to save a .xbm file and use the array saved in the file to draw a bitmap with the drawXBitmap function. See the main tcMenu repo to download. 
+- 'Fonts' folder contains bitmap fonts for use with recent (1.1 and later) Adafruit_GFX. To use a font in your Arduino sketch, \#include the corresponding .h file and pass address of GFXfont struct to setFont(). As of 2024 you must choose a font, either TcUnicode or Ada Gfx. This fork now always uses the tcUnicode library for text.
+- You can use TcMenu Designer to export custom fonts, it has a font export utility.
