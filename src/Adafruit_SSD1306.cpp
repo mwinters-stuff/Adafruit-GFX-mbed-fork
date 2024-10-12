@@ -229,7 +229,7 @@ void Adafruit_SSD1306::splash()
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	
-	memcpy(buffer, &adaFruitLogo[0], min((size_t)sizeof(adaFruitLogo), buffSize));
+	memcpy(buffer, &adaFruitLogo[0], internal_min((size_t)sizeof(adaFruitLogo), buffSize));
 #endif
 }
 
