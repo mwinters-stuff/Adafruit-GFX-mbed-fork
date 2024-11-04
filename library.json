@@ -33,7 +33,11 @@
     [
         {
             "name": "IoAbstraction",
-            "authors": "DaveTcc"
+            "authors": "tcmenu"
+        },
+        {
+            "name": "tcUnicodeHelper",
+            "authors": "tcmenu"
         }
     ],
     "repository": {
