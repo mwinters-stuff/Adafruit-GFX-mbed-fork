@@ -12,7 +12,9 @@ This library carries exactly the same licensing terms as the original, any chang
 
 ## Library fork supporting SSD1306/SH1106 displays on mbed 5/6 RTOS
 
-Although many newer mbed RTOS chipsets have inbuilt hardware LCD drivers, there's sometimes a need to use a more basic display, such as an OLED or LCD unit. This is a fork of the Adafruit_GFX library with changes to run on mbed 5/6 RTOS. It is derived from a few sources:
+TcMenu organisation have also put huge effort into making this library work on many non-Arduino/Real C++ environments such as Pico-SDK and mbed. It takes considerable effort to keep this working, please do keep in mind that both Adafruit and TcMenu have spent many hours to bring you this library.
+
+This library provides support for OLED displays such as SSD1306 and SH1106 devices on both PicoSDK and mbed RTOS. This is a fork of the Adafruit_GFX library with changes to run on mbed 5/6 RTOS. It is derived from a few sources:
 
 * Most of the hard work was done by [AdaFruit in the Adafruit_GFX repo](https://github.com/adafruit/Adafruit-GFX-Library)
 * I then combined the latest Adafruit_GFX master with the [work originally done to support SSD1306 on mbed 2](https://os.mbed.com/users/nkhorman/code/Adafruit_GFX/) 
@@ -20,11 +22,9 @@ Although many newer mbed RTOS chipsets have inbuilt hardware LCD drivers, there'
 * You can use the regular [Adafruit_GFX introductory guide](https://learn.adafruit.com/adafruit-gfx-graphics-library/overview) as this fork has high compatibility. 
 * It also integrates well with tcMenu, IoAbstraction and TaskManagerIO.
 
-## Different construction between version
-
-If you prefer to stay temporarily with the old version here is the link, we do recommend you move forward, and the work to do so should be trivial for most, but here is the old link: https://github.com/TcMenu/Adafruit-GFX-mbed-fork/releases/tag/mb0.1.1
-
 ## Constructing and using a display object
+
+As of 1.0, we've moved to using [IoAbstraction's SPI and I2C wrappers](https://github.com/TcMenu/IoAbstraction) as these provide an easy way to get this library working on a wider range of boards (and even more going forward). It is no longer possible to use this library without `IoAbstraction`.
 
 For SPI, we recommend that you create the object using `new` once the system is initialised, sometimes trying to use SPI in any way before this results in board crashes. This is as simple as deferring the creation.
     
@@ -63,6 +63,7 @@ Important note about bug fixes: do not put in PRs for the core graphics class he
 
 # Bitmaps and fonts with the library
 
-- With TcMenu Designer you can now export and even create bitmaps suitable for use with this library. You can use the GIMP photo editor to save a .xbm file and use the array saved in the file to draw a bitmap with the drawXBitmap function. See the main tcMenu repo to download. 
-- 'Fonts' folder contains bitmap fonts for use with recent (1.1 and later) Adafruit_GFX. To use a font in your Arduino sketch, \#include the corresponding .h file and pass address of GFXfont struct to setFont(). As of 2024 you must choose a font, either TcUnicode or Ada Gfx. This fork now always uses the tcUnicode library for text.
-- You can use TcMenu Designer to export custom fonts, it has a font export utility.
+- With TcMenu Designer you can now export and even create bitmaps suitable for use with this library. You can use the GIMP photo editor to save a .xbm file and use the array saved in the file to draw a bitmap with the drawXBitmap function. [See how to use the bitmap creator in TcMenu Designer](https://tcmenu.github.io/documentation/arduino-libraries/tc-menu/creating-and-using-bitmaps-menu/) 
+- The 'Fonts' folder contains bitmap fonts that you can use with the library. This library also automatically includes `tcUnicodeHelper` and therefore supports UTF-8 Unicode strings out of box. To use a font in your Arduino sketch, `#include` the corresponding `.h` file and pass address of GFXfont struct to setFont(). 
+- **As of V1.0.0 you must choose a font there is no longer a default font.**
+- [See how to create fonts using TcMenu Designer](https://tcmenu.github.io/documentation/arduino-libraries/tc-menu/using-custom-fonts-in-menu/#creating-a-unicode-or-adafruit-font-using-the-designer-ui)
