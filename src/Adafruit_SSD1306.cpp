@@ -20,8 +20,8 @@ All text above, and the splash screen below must be included in any redistributi
  *  Modified by Neal Horman 7/14/2012 for use in mbed
  */
 
-#include "mbed.h"
 #include "Adafruit_SSD1306.h"
+#include <IoAbstraction.h>
 
 #define SSD1306_SETCONTRAST 0x81
 #define SSD1306_DISPLAYALLON_RESUME 0xA4
@@ -48,20 +48,21 @@ All text above, and the splash screen below must be included in any redistributi
 
 void Adafruit_SSD1306::begin(uint8_t vccstate)
 {
-    if(rst.is_connected()) {
-        rst = 1;
-        wait_us(1000);
-        // bring reset low
-        rst = 0;
-        // wait 10ms
-        wait_us(10000);
-        // bring out of reset
-        rst = 1;
+    if(rst != 0xFF) {
+        internalDigitalDevice().pinMode(rst, OUTPUT);
+        internalDigitalDevice().digitalWriteS(rst, HIGH);
+        delayMicroseconds(1000);
+
+        // trigger a reset, by pulling low, then high.
+        internalDigitalDevice().digitalWriteS(rst, LOW);
+        delayMicroseconds(3000);
+        internalDigitalDevice().digitalWriteS(rst, HIGH);
     }
 
-    // turn on VCC (9V?)
-    // VDD (3.3V) goes high at start, lets just chill for a ms
+    // wait 1ms
+    delayMicroseconds(1000);
 
+    // now we go through
     command(SSD1306_DISPLAYOFF);
     command(SSD1306_SETDISPLAYCLOCKDIV);
     command(0x80);                                  // the suggested ratio 0x80
@@ -151,12 +152,12 @@ void Adafruit_SSD1306::display(void)
 }
 
 // Clear the display buffer. Requires a display() call at some point afterwards
-void Adafruit_SSD1306::clearDisplay(void)
+void Adafruit_SSD1306::clearDisplay()
 {
 	memset(buffer, 0, buffSize);
 }
 
-void Adafruit_SSD1306::splash(void)
+void Adafruit_SSD1306::splash()
 {
 #ifndef NO_SPLASH_ADAFRUIT
 	uint8_t adaFruitLogo[64 * 128 / 8] =
@@ -228,13 +229,13 @@ void Adafruit_SSD1306::splash(void)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	
-	memcpy(buffer, &adaFruitLogo[0], min((size_t)sizeof(adaFruitLogo), buffSize));
+	memcpy(buffer, &adaFruitLogo[0], internal_min((size_t)sizeof(adaFruitLogo), buffSize));
 #endif
 }
 
-Adafruit_SSD1306::Adafruit_SSD1306(PinName RST, uint8_t rawHeight, uint8_t rawWidth)
-        : Adafruit_GFX(rawWidth,rawHeight)
-        , rst(RST,false)
+Adafruit_SSD1306::Adafruit_SSD1306(pinid_t RST, int16_t rawHeight, int16_t rawWidth, UnicodeEncodingMode encodingMode)
+        : Adafruit_GFX(rawWidth,rawHeight, encodingMode)
+        , rst(RST)
 {
     buffSize = (rawHeight / 8) * rawWidth;
     buffer = new uint8_t[buffSize];

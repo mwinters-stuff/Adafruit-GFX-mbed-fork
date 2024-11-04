@@ -12,7 +12,7 @@
 #include <IoLogging.h>
 #include <NetworkInterface.h>
 //#include "Adafruit_SSD1306_I2c.h" (for i2c displays)
-#include "Adafruit_SSD1306_Spi.h"
+#include "oled/AdafruitSSD1306I2c.h"
 #include "NTPTimeEvent.h"
 
 // Host PC Communication channels
@@ -21,11 +21,10 @@ MBedLogger LoggingPort(pc);
 
 bool running = true;
 
-//I2C i2c(PF_0,PF_1);
-//Adafruit_SSD1306_I2c gfx(i2c, NC, SSD_I2C_ADDRESS, 64, 132, SH_1106);
+I2C i2c(PF_0,PF_1);
+#define SSD_I2C_ADDRESS 0x78
+AdafruitSSD1306I2c gfx(&i2c, NC, SSD_I2C_ADDRESS, 64, 132, ENCMODE_UTF8, SH_1106);
 
-SPI spi(PB_5, PB_4, PB_3);
-Adafruit_SSD1306_Spi gfx(spi, PD_15, PF_12, PF_13, 64, 128, SSD_1306);
 
 // we are going to use NTP, we need to enable the network device to get a reading.
 NetworkInterface* defNetwork = NetworkInterface::get_default_instance();
