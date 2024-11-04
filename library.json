@@ -2,8 +2,8 @@
     "authors":
     [
         {
-            "name": "DaveTcc",
-            "url": "https://www.thecoderscorner.com",
+            "name": "TcMenu",
+            "url": "https://tcmenu.github.io/documentation/",
             "maintainer": true
         },
         {
@@ -40,5 +40,5 @@
         "type": "git",
         "url": "https://github.com/TcMenu/Adafruit-GFX-mbed-fork"
     },
-    "version": "1.0.0"
+    "version": "mb1.0.0"
 }
